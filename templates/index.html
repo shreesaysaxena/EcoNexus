@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Techy Camera Capture</title>
+    <!-- Google Fonts for a modern look -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #1e1e2f;
+            color: #e0e0e0;
+            font-family: 'Roboto', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            color: #00d4ff;
+            text-shadow: 0 0 10px rgba(0, 212, 255, 0.8);
+        }
+
+        .video-container {
+            border: 2px solid #00d4ff;
+            border-radius: 15px;
+            overflow: hidden;
+            width: 340px;
+            box-shadow: 0 4px 20px rgba(0, 212, 255, 0.2);
+        }
+
+        video {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        canvas {
+            display: none;
+        }
+
+        .buttons {
+            margin-top: 20px;
+        }
+
+        button {
+            background-color: #00d4ff;
+            color: #1e1e2f;
+            font-weight: 700;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease-in-out;
+            font-size: 1rem;
+        }
+
+        button:hover {
+            background-color: #00a3cc;
+            transform: scale(1.1);
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        .message {
+            margin-top: 15px;
+            font-size: 1.2rem;
+            color: #8f8f9d;
+        }
+
+        .footer {
+            position: absolute;
+            bottom: 20px;
+            font-size: 0.8rem;
+            color: #6f6f7f;
+        }
+    </style>
+</head>
+<body>
+    <h1>Capture Image</h1>
+    <div class="video-container">
+        <video id="video" autoplay></video>
+        <canvas id="canvas" width="320" height="240"></canvas>
+    </div>
+    <div class="buttons">
+        <button id="captureButton">Capture & Upload</button>
+    </div>
+    <p class="message">{{ processed_message }}</p>
+    <div class="footer">Powered by J.A.R.V.I.S</div>
+
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const captureButton = document.getElementById('captureButton');
+
+        // Access the rear camera
+        navigator.mediaDevices.getUserMedia({
+            video: { facingMode: { exact: 'environment' } }
+        })
+        .then(stream => {
+            video.srcObject = stream;
+        })
+        .catch(error => {
+            console.error('Error accessing rear camera:', error);
+        });
+
+        // Capture an image when the button is clicked
+        captureButton.addEventListener('click', () => {
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Convert the canvas to a data URL (base64 encoded image)
+            canvas.toBlob((blob) => {
+                const formData = new FormData();
+                formData.append('file', blob, 'captured_image.png');
+
+                // Send the image to the server
+                fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.text())
+                .then(result => {
+                    console.log('Image uploaded and processed:', result);
+                    window.location.reload(); // Reload to update processed message
+                })
+                .catch(error => {
+                    console.error('Error uploading image:', error);
+                });
+            }, 'image/png');
+        });
+    </script>
+</body>
+</html>
